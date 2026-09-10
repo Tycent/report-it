@@ -1,0 +1,89 @@
+<?php
+$submitted = $_SERVER['REQUEST_METHOD'] === 'POST';
+$currentYear = date('Y');
+?>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Report It helps communities report local problems and follow progress toward a fix.">
+    <title>Report It | Make your neighbourhood heard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="hero-wrap">
+        <div class="shell">
+            <header class="topbar">
+                <a class="brand" href="index.php" aria-label="Report It home">
+                    <span class="brand-mark">R</span>
+                    <span>Report It</span>
+                </a>
+                <nav class="nav" aria-label="Main navigation">
+                    <a href="#how-it-works">How it works</a>
+                    <a href="#about">About</a>
+                    <a class="nav-cta" href="#report">Report an issue</a>
+                </nav>
+            </header>
+            <main>
+                <section class="hero" aria-labelledby="hero-title">
+                    <div class="hero-copy-block reveal">
+                        <p class="eyebrow">A clearer route from problem to progress</p>
+                        <h1 id="hero-title">Your street.<br>Your say.</h1>
+                        <p class="hero-copy">Report broken lights, unsafe roads, water leaks and more. Report It helps your community speak up, stay informed and see what changes.</p>
+                        <div class="button-row">
+                            <a class="button button-primary" href="#report">Report a problem <span aria-hidden="true">&#8599;</span></a>
+                            <a class="button button-secondary" href="#how-it-works">See how it works</a>
+                        </div>
+                    </div>
+                    <div class="hero-art reveal" aria-label="Community issue status preview" role="img">
+                        <div class="status-card">
+                            <small>Road repair / Greenway</small>
+                            <strong>In progress</strong>
+                            <div class="progress" aria-label="75 percent complete"><span></span></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <section id="how-it-works" class="shell intro">
+        <p class="section-label">How it works</p>
+        <div>
+            <h2>Small reports create visible change.</h2>
+            <div class="feature-grid">
+                <article class="feature reveal"><span class="feature-number">01</span><h3>Spot it</h3><p>Notice something that needs attention? Start a report in seconds.</p></article>
+                <article class="feature reveal"><span class="feature-number">02</span><h3>Share it</h3><p>Add the location, a photo and the detail that helps teams act.</p></article>
+                <article class="feature reveal"><span class="feature-number">03</span><h3>Follow it</h3><p>Keep an eye on progress from received through to resolved.</p></article>
+                <article class="feature reveal"><span class="feature-number">04</span><h3>Improve it</h3><p>Turn local knowledge into a safer, cleaner place for everyone.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section id="report" class="report-section">
+        <div class="shell report-layout">
+            <div>
+                <p class="eyebrow">Start here</p>
+                <h2>See a problem?<br>Make it visible.</h2>
+                <p class="report-note">This demo form is ready to connect to your reporting API. For now, it gives residents a simple, friendly first step.</p>
+            </div>
+            <form class="report-form reveal" method="post" action="#report" id="report-form">
+                <div class="form-row">
+                    <div class="field"><label for="name">Your name</label><input id="name" name="name" type="text" placeholder="e.g. Alex Moyo" required></div>
+                    <div class="field"><label for="category">Issue type</label><select id="category" name="category" required><option value="">Choose one</option><option>Roads and transport</option><option>Water and drainage</option><option>Power and lighting</option><option>Waste and cleanliness</option><option>Safety concern</option></select></div>
+                </div>
+                <div class="field"><label for="location">Location</label><input id="location" name="location" type="text" placeholder="Street, suburb or landmark" required></div>
+                <div class="field"><label for="details">What is happening?</label><textarea id="details" name="details" placeholder="Tell us what you noticed..." required></textarea></div>
+                <button class="button form-submit" type="submit">Send report <span aria-hidden="true">&#8594;</span></button>
+                <p class="form-message<?php echo $submitted ? ' is-visible' : ''; ?>" role="status"><?php echo $submitted ? 'Thanks. Your report has been recorded for review.' : ''; ?></p>
+            </form>
+        </div>
+    </section>
+
+    <footer id="about" class="footer">
+        <div class="shell footer-inner"><a class="brand" href="index.php"><span class="brand-mark">R</span><span>Report It</span></a><span>Built for communities that care. &copy; <?php echo $currentYear; ?></span><a href="mailto:hello@reportit.local">hello@reportit.local</a></div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
