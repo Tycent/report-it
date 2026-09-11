@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Create a Report It account.">
+    <title>Create account | Report It</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-page">
+    <main class="login-page-shell">
+        <section class="login-page-panel" aria-labelledby="register-title">
+            <a class="login-page-brand" href="index.html" aria-label="Report It home"><img class="brand-logo" src="logo.png" alt="Report It"><span>Report It</span></a>
+            <div class="login-page-content register-content">
+                <p class="eyebrow">Join your community</p>
+                <h1 id="register-title">Create an account.</h1>
+                <p class="login-copy">Use these details in both the website and the Report It mobile application.</p>
+                <form class="login-page-form" id="register-form" data-endpoint="register.php">
+                    <div class="field"><label for="register-name">Full name</label><input id="register-name" name="name" type="text" autocomplete="name" required></div>
+                    <div class="field"><label for="register-address">Residential address</label><input id="register-address" name="address" type="text" autocomplete="street-address" required></div>
+                    <div class="field"><label for="register-phone">Phone number</label><input id="register-phone" name="phone" type="tel" autocomplete="tel" required></div>
+                    <div class="form-row">
+                        <div class="field"><label for="register-password">Password</label><input id="register-password" name="password" type="password" autocomplete="new-password" minlength="6" required></div>
+                        <div class="field"><label for="register-confirm-password">Confirm password</label><input id="register-confirm-password" name="confirm_password" type="password" autocomplete="new-password" minlength="6" required></div>
+                    </div>
+                    <button class="button form-submit" type="submit">Create account <span aria-hidden="true">&#8594;</span></button>
+                    <p class="login-message" role="status"></p>
+                </form>
+                <p class="login-page-note">Already registered? <a href="index.html">Log in</a></p>
+            </div>
+        </section>
+        <aside class="login-page-art" aria-label="Report It community reporting preview">
+            <div class="login-page-art-content"><p class="eyebrow">Report It</p><h2>Small reports create visible change.</h2><p>Your account keeps your reports connected across the website and mobile application.</p></div>
+            <div class="status-card"><small>Account status</small><strong>Connected</strong><div class="progress" aria-label="Account connected"><span></span></div></div>
+        </aside>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -2,11 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="refresh" content="0; url=index.php">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Report It</title>
+    <meta name="description" content="Log in to Report It to report local problems and follow progress toward a fix.">
+    <title>Log in | Report It</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <p>Opening <a href="index.php">Report It</a>...</p>
+<body class="login-page">
+    <main class="login-page-shell">
+        <section class="login-page-panel" aria-labelledby="login-title">
+            <a class="login-page-brand" href="index.html" aria-label="Report It home"><img class="brand-logo" src="logo.png" alt="Report It"><span>Report It</span></a>
+            <div class="login-page-content">
+                <p class="eyebrow">Your community, connected</p>
+                <h1 id="login-title">Welcome back.</h1>
+                <p class="login-copy">Log in with the same phone number and password you use in the Report It application.</p>
+                <form class="login-page-form" id="login-form" data-endpoint="login.php">
+                    <div class="field"><label for="login-phone">Phone number</label><input id="login-phone" name="phone" type="tel" autocomplete="username" required></div>
+                    <div class="field"><label for="login-password">Password</label><input id="login-password" name="password" type="password" autocomplete="current-password" required></div>
+                    <button class="button form-submit" type="submit">Log in <span aria-hidden="true">&#8594;</span></button>
+                    <p class="login-message" role="status"></p>
+                </form>
+                <p class="login-page-note">New to Report It? <a href="register.html">Create an account</a></p>
+            </div>
+        </section>
+        <aside class="login-page-art" aria-label="Report It community reporting preview">
+            <div class="login-page-art-content"><p class="eyebrow">Report It</p><h2>Make your street heard.</h2><p>Report local issues, follow progress, and help create safer places for everyone.</p></div>
+            <div class="status-card"><small>Road repair / Greenway</small><strong>In progress</strong><div class="progress" aria-label="75 percent complete"><span></span></div></div>
+        </aside>
+    </main>
+    <script src="script.js"></script>
 </body>
 </html>
