@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1066645824886",
+    "project_id": "report-it-cf60e",
+    "storage_bucket": "report-it-cf60e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066645824886:android:21a09abe0ce15a0435c657",
+        "android_client_info": {
+          "package_name": "com.example.tetsapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_bUX9kzgHpXEy1IB4W3s6U4VwBuO-KL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

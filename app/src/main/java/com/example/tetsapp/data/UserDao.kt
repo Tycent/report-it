@@ -10,6 +10,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE phoneNumber = :phone LIMIT 1")
     suspend fun getUserByPhone(phone: String): User?
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User)
+
+    @Query("UPDATE users SET password = :newPassword WHERE phoneNumber = :phone")
+    suspend fun updatePassword(phone: String, newPassword: String)
 }

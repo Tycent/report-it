@@ -40,8 +40,8 @@ fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var phoneNumber by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("0777777777") }
+    var password by remember { mutableStateOf("TYCENT@12") }
 
     Column(
         modifier = modifier

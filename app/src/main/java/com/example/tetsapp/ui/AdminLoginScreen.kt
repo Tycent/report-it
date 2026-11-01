@@ -17,12 +17,11 @@ import com.example.tetsapp.R
 @Composable
 fun AdminLoginScreen(
     onLoginClick: (String, String) -> Unit,
-    onSignUpClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var phoneNumber by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var forceNumber by remember { mutableStateOf("Tafadzwa") }
+    var password by remember { mutableStateOf("TYCENT@12") }
 
     Column(
         modifier = modifier
@@ -52,9 +51,9 @@ fun AdminLoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            label = { Text("Admin Phone Number") },
+            value = forceNumber,
+            onValueChange = { forceNumber = it },
+            label = { Text("Force Number") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -73,16 +72,10 @@ fun AdminLoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { onLoginClick(phoneNumber, password) },
+            onClick = { onLoginClick(forceNumber, password) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Admin Log In")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(onClick = onSignUpClick) {
-            Text("Register as Admin")
         }
 
         Spacer(modifier = Modifier.height(8.dp))

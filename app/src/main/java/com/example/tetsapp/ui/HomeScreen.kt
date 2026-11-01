@@ -2,27 +2,12 @@ package com.example.tetsapp.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,12 +23,19 @@ import com.example.tetsapp.ui.theme.TetsAppTheme
 @Composable
 fun HomeScreen(
     onReportOptionClick: (String) -> Unit,
+    onViewMyReportsClick: () -> Unit,
+    onEmergencyCallClick: (String) -> Unit,
     onLogoutClick: () -> Unit,
     isDarkTheme: Boolean,
     onThemeToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val reportOptions = listOf("ZINWA", "CITY COUNCIL", "ZESA")
+    val emergencyContacts = listOf(
+        "Fire Brigade" to "993",
+        "Police" to "995",
+        "Ambulance" to "994"
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         IconButton(
@@ -64,13 +56,13 @@ fun HomeScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Report It Logo",
                 modifier = Modifier
-                    .height(100.dp)
+                    .height(80.dp)
                     .fillMaxWidth(),
                 contentScale = ContentScale.Fit
             )
@@ -78,15 +70,16 @@ fun HomeScreen(
             Text(
                 text = "Where is the problem?",
                 fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
             )
 
             reportOptions.forEach { option ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 6.dp)
                         .clickable { onReportOptionClick(option) },
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(
@@ -95,14 +88,14 @@ fun HomeScreen(
                 ) {
                     Row(
                         modifier = Modifier
-                            .padding(20.dp)
+                            .padding(16.dp)
                             .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
                             text = option,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Icon(
@@ -115,34 +108,55 @@ fun HomeScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onViewMyReportsClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Icon(Icons.Default.List, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("View My Reports")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Emergency Contacts",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            LazyRow(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(emergencyContacts) { contact ->
+                    AssistChip(
+                        onClick = { onEmergencyCallClick(contact.second) },
+                        label = { Text(contact.first) },
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             TextButton(
                 onClick = onLogoutClick,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 4.dp)
             ) {
                 Text("Log Out", color = MaterialTheme.colorScheme.error)
             }
 
             Text(
                 text = "powered by {TYCENT SECURITY SOLUTION }",
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    TetsAppTheme {
-        HomeScreen(
-            onReportOptionClick = {},
-            onLogoutClick = {},
-            isDarkTheme = false,
-            onThemeToggle = {}
-        )
     }
 }

@@ -7,8 +7,12 @@ import androidx.room.PrimaryKey
 data class Report(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val description: String,
-    val department: String,
-    val reporterPhone: String,
+    val description: String = "",
+    val department: String = "",
+    val reporterPhone: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val imageUrl: String? = null,
+    val status: String = "Pending",
     val timestamp: Long = System.currentTimeMillis()
 )

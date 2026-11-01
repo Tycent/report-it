@@ -10,6 +10,6 @@ interface AdminDao {
     @Query("SELECT * FROM admins WHERE forceNumber = :forceNumber LIMIT 1")
     suspend fun getAdminByForceNumber(forceNumber: String): Admin?
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAdmin(admin: Admin)
 }

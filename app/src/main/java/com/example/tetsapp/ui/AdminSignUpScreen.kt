@@ -14,11 +14,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun AdminSignUpScreen(
-    onSignUpClick: (String, String, String, String) -> Unit,
+    onSignUpClick: (String, String, String, String, String) -> Unit,
     onBackToLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }
+    var forceNumber by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -44,6 +45,16 @@ fun AdminSignUpScreen(
             value = name,
             onValueChange = { name = it },
             label = { Text("Full Name") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = forceNumber,
+            onValueChange = { forceNumber = it },
+            label = { Text("Force Number (Primary Key)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -82,9 +93,9 @@ fun AdminSignUpScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { onSignUpClick(name, department, phone, password) },
+            onClick = { onSignUpClick(name, forceNumber, department, phone, password) },
             modifier = Modifier.fillMaxWidth(),
-            enabled = name.isNotBlank() && department.isNotBlank() && phone.isNotBlank() && password.isNotBlank()
+            enabled = name.isNotBlank() && forceNumber.isNotBlank() && department.isNotBlank() && phone.isNotBlank() && password.isNotBlank()
         ) {
             Text("Register Admin")
         }
