@@ -1,2 +1,4 @@
 <?php
-require_once __DIR__ . '/../reportit/contact.php';
+http_response_code(410);
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode(['success' => false, 'message' => 'This endpoint has been retired. Submit reports through the website.']);

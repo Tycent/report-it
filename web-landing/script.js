@@ -138,7 +138,7 @@ if (loginForm) {
             const localUser = localUsers[phone];
 
             // Allow pre-seeded test admin/user credentials or registered local users
-            if ((phone === '0777777777' && password === 'TYCENT@12') || (localUser && localUser.password === password)) {
+            if ((phone === '0777777777' && password === '123456789') || (localUser && localUser.password === password)) {
                 const userName = localUser ? localUser.name : 'Tafadzwa';
                 loginMessage.className = 'login-message is-visible is-success';
                 loginMessage.textContent = `Welcome back, ${userName} (Demo Mode).`;
@@ -149,7 +149,7 @@ if (loginForm) {
                 window.setTimeout(() => { window.location.href = 'app.html'; }, 800);
             } else {
                 loginMessage.className = 'login-message is-visible';
-                loginMessage.textContent = 'Invalid credentials. (Demo Mode: try phone 0777777777, password TYCENT@12)';
+                loginMessage.textContent = 'Invalid credentials. (Demo Mode: try phone 0777777777, password 123456789)';
             }
         } finally {
             submitButton.disabled = false;

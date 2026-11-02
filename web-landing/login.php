@@ -1,4 +1,9 @@
 <?php
+http_response_code(410);
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode(['success' => false, 'message' => 'This endpoint has been retired. Use the website sign-in form.']);
+exit;
+
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 

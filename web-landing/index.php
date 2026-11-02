@@ -1,6 +1,6 @@
 <?php
-$submitted = $_SERVER['REQUEST_METHOD'] === 'POST';
-$currentYear = date('Y');
+header('Location: app.html', true, 302);
+exit;
 ?>
 <!doctype html>
 <html lang="en">

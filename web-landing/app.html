@@ -19,12 +19,12 @@
                 <form id="login-form" class="login-form" novalidate>
                     <div class="login-copy">
                         <p class="section-label">Account access</p>
-                        <h2>Use the same login details in the app</h2>
+                        <h2>Sign in with your phone number</h2>
                     </div>
                     <div class="login-fields">
                         <div class="field">
-                            <label for="login-email">Email</label>
-                            <input id="login-email" name="email" type="email" placeholder="you@example.com" required>
+                            <label for="login-phone">Phone number</label>
+                            <input id="login-phone" name="phone" type="tel" autocomplete="tel" placeholder="077... or +263..." required>
                         </div>
                         <div class="field">
                             <label for="login-password">Password</label>
@@ -35,6 +35,7 @@
                         <button class="button button-primary" type="submit">Log in</button>
                         <button class="button button-secondary" type="button" id="logout-button" hidden>Log out</button>
                     </div>
+                    <p class="registration-prompt" id="registration-prompt">Not registered? <button type="button" id="registration-toggle" aria-pressed="false">Register</button></p>
                     <p class="form-message auth-message" id="login-message" role="status" aria-live="polite"></p>
                 </form>
             </section>
@@ -78,15 +79,21 @@
             <article class="feature reveal"><span class="feature-number">02</span><h3>Under review</h3><p>Department teams assess the report and assign a response.</p></article>
             <article class="feature reveal"><span class="feature-number">03</span><h3>In progress</h3><p>Follow updates as response teams begin work.</p></article>
             <article class="feature reveal"><span class="feature-number">04</span><h3>Resolved</h3><p>Check the final status and keep your community informed.</p></article>
+        </div>
+        <div class="report-tracker">
+            <h3>Your reports</h3>
+            <p id="report-tracker-message" role="status" aria-live="polite">Sign in to see your report updates.</p>
+            <div id="report-list" aria-live="polite"></div>
         </div></div>
     </section>
 
     <section id="report" class="report-section"><div class="shell report-layout">
         <div><p class="eyebrow">Start here</p><h2>See a problem?<br>Make it visible.</h2><p class="report-note">Share the details, location and a photo so municipal and utility teams can understand the issue.</p></div>
-        <form class="report-form reveal" id="report-form" data-endpoint="contact.php"><div class="form-row">
+        <form class="report-form reveal" id="report-form"><div class="form-row">
             <div class="field"><label for="name">Your name</label><input id="name" name="name" type="text" placeholder="e.g. Tycent Mazivisa" required></div>
             <div class="field"><label for="category">Issue type</label><select id="category" name="category" required><option value="">Choose one</option><option>Roads and transport</option><option>Water and drainage</option><option>Power and lighting</option><option>Waste and cleanliness</option><option>Safety concern</option></select></div>
         </div><div class="field"><label for="location">Location</label><input id="location" name="location" type="text" placeholder="Street, suburb or landmark" required></div>
+            <div class="field"><label for="reporter-phone">Phone number</label><input id="reporter-phone" name="reporterPhone" type="tel" autocomplete="tel" readonly required></div>
         <div class="form-row"><div class="field"><label for="coordinates">GPS coordinates (optional)</label><input id="coordinates" name="coordinates" type="text" placeholder="Latitude, longitude" inputmode="decimal"><button class="button button-secondary" type="button" id="use-location">Use my location</button></div>
         <div class="field"><label for="photo">Add a photo (optional)</label><input id="photo" name="photo" type="file" accept="image/*" capture="environment"><small>Attach an image of the issue, if available.</small></div></div>
         <div class="field"><label for="details">What is happening?</label><textarea id="details" name="details" placeholder="Tell us what you noticed..." required></textarea></div>
@@ -98,113 +105,190 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     <script src="script.js"></script>
      <script>
         (() => {
-            const appStorageKey = 'reportit-auth-user';
-            const appSessionKey = 'reportit-auth-session';
-
             const loginForm = document.getElementById('login-form');
             const loginMessage = document.getElementById('login-message');
+            const phoneField = document.getElementById('login-phone');
+            const reportPhoneField = document.getElementById('reporter-phone');
             const logoutButton = document.getElementById('logout-button');
+            const registrationToggle = document.getElementById('registration-toggle');
+            const registrationPrompt = document.getElementById('registration-prompt');
+            const loginSubmit = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
+            const trackerMessage = document.getElementById('report-tracker-message');
+            const reportList = document.getElementById('report-list');
+            let stopTracking = () => {};
+            let registrationMode = false;
+            const firebaseReady = typeof firebase !== 'undefined' && firebase.apps.length > 0;
+            const auth = firebaseReady ? firebase.auth() : null;
+            const db = firebaseReady ? firebase.firestore() : null;
+            const storage = firebaseReady ? firebase.storage() : null;
 
             const setAuthMessage = (message, isError = false) => {
                 if (!loginMessage) return;
                 loginMessage.textContent = message;
+                loginMessage.classList.add('is-visible');
                 loginMessage.classList.toggle('success', !isError);
                 loginMessage.classList.toggle('error', isError);
             };
 
-            const syncSession = (user) => {
-                if (!user || !user.email || !user.password) {
-                    localStorage.removeItem(appStorageKey);
-                    localStorage.removeItem(appSessionKey);
-                    return;
+            const normalizePhone = (value) => {
+                const trimmed = value.trim();
+                if (!/^\+?[\d\s().-]+$/.test(trimmed)) {
+                    throw new Error('Enter a valid phone number, for example 077... or +263...');
                 }
-
-                const sessionUser = {
-                    email: user.email,
-                    password: user.password,
-                    displayName: user.displayName || user.email.split('@')[0],
-                    lastLogin: new Date().toISOString()
-                };
-
-                localStorage.setItem(appStorageKey, JSON.stringify(sessionUser));
-                localStorage.setItem(appSessionKey, JSON.stringify({
-                    email: sessionUser.email,
-                    password: sessionUser.password,
-                    loggedInAt: sessionUser.lastLogin
-                }));
+                let digits = trimmed.replace(/\D/g, '');
+                if (digits.startsWith('0')) digits = `263${digits.slice(1)}`;
+                if (digits.length < 7 || digits.length > 15) {
+                    throw new Error('Enter a valid phone number, for example 077... or +263...');
+                }
+                return `+${digits}`;
             };
 
-            const hydrateAuthState = () => {
-                const stored = localStorage.getItem(appStorageKey);
-                if (!stored) {
-                    if (logoutButton) logoutButton.hidden = true;
+            const authEmailForPhone = (phone) => `phone-${phone.replace(/\D/g, '')}@report-it-cf60e.firebaseapp.com`;
+
+            const phoneForAuthUser = (user) => {
+                const match = user && user.email && user.email.match(/^phone-(\d+)@report-it-cf60e\.firebaseapp\.com$/);
+                return match ? `+${match[1]}` : '';
+            };
+
+            const handleLogout = async () => {
+                if (!auth) {
+                    setAuthMessage('Firebase is not configured for this website.', true);
                     return;
                 }
-
                 try {
-                    const user = JSON.parse(stored);
-                    if (user && user.email) {
-                        const emailField = document.getElementById('login-email');
-                        const passwordField = document.getElementById('login-password');
-                        if (emailField) emailField.value = user.email;
-                        if (passwordField) passwordField.value = user.password || '';
-                        if (loginMessage) {
-                            loginMessage.textContent = `Logged in as ${user.email}`;
-                            loginMessage.classList.add('success');
-                        }
-                        if (logoutButton) logoutButton.hidden = false;
-                    }
+                    await auth.signOut();
+                    setAuthMessage('You have been signed out.');
                 } catch (error) {
-                    console.warn('Unable to restore saved app login.', error);
+                    setAuthMessage(error.message || 'Unable to sign out.', true);
                 }
             };
 
-            const handleLogout = () => {
-                localStorage.removeItem(appStorageKey);
-                localStorage.removeItem(appSessionKey);
-                if (loginForm) loginForm.reset();
-                if (logoutButton) logoutButton.hidden = true;
-                setAuthMessage('You have been signed out of the shared app session.');
+            const setRegistrationMode = (enabled) => {
+                registrationMode = enabled;
+                if (loginSubmit) loginSubmit.textContent = registrationMode ? 'Register' : 'Log in';
+                if (registrationPrompt) registrationPrompt.firstChild.textContent = registrationMode ? 'Already registered? ' : 'Not registered? ';
+                if (registrationToggle) {
+                    registrationToggle.textContent = registrationMode ? 'Log in' : 'Register';
+                    registrationToggle.setAttribute('aria-pressed', String(registrationMode));
+                }
+                setAuthMessage(registrationMode ? 'Enter your phone number and password to create an account.' : 'Enter your phone number and password.');
             };
+
+            if (registrationToggle) {
+                registrationToggle.addEventListener('click', () => {
+                    setRegistrationMode(!registrationMode);
+                });
+            }
+            if (window.location.hash === '#register') {
+                setRegistrationMode(true);
+            }
 
             if (logoutButton) {
                 logoutButton.addEventListener('click', handleLogout);
             }
 
             if (loginForm) {
-                loginForm.addEventListener('submit', (event) => {
+                loginForm.addEventListener('submit', async (event) => {
                     event.preventDefault();
 
                     if (!loginForm.reportValidity()) {
-                        setAuthMessage('Please complete the email and password fields.', true);
+                        setAuthMessage('Please complete the phone number and password fields.', true);
                         return;
                     }
 
                     const formData = new FormData(loginForm);
-                    const email = String(formData.get('email') || '').trim();
-                    const password = String(formData.get('password') || '').trim();
+                    let phone;
+                    try {
+                        phone = normalizePhone(String(formData.get('phone') || ''));
+                    } catch (error) {
+                        setAuthMessage(error.message, true);
+                        return;
+                    }
+                    const password = String(formData.get('password') || '');
 
-                    if (!email || !password) {
-                        setAuthMessage('Email and password are required.', true);
+                    if (!phone || !password) {
+                        setAuthMessage('Phone number and password are required.', true);
                         return;
                     }
 
-                    const user = {
-                        email,
-                        password,
-                        displayName: email.split('@')[0]
-                    };
-
-                    syncSession(user);
-                    setAuthMessage(`Logged in successfully as ${email}. This account is now shared with the application.`);
-                    if (logoutButton) logoutButton.hidden = false;
+                    if (!auth) {
+                        setAuthMessage('Firebase is not configured for this website.', true);
+                        return;
+                    }
+                    try {
+                        const authEmail = authEmailForPhone(phone);
+                        if (registrationMode) {
+                            if (password.length < 6) throw new Error('Password must contain at least 6 characters.');
+                            await auth.createUserWithEmailAndPassword(authEmail, password);
+                            setAuthMessage(`Your account has been created for ${phone} and you are signed in.`);
+                        } else {
+                            await auth.signInWithEmailAndPassword(authEmail, password);
+                            setAuthMessage(`Signed in as ${phone}.`);
+                        }
+                        if (phoneField) phoneField.value = phone;
+                        if (reportPhoneField) reportPhoneField.value = phone;
+                    } catch (error) {
+                        const message = error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential'
+                            ? 'No account found for that phone number, or the password is incorrect.'
+                            : error.code === 'auth/email-already-in-use'
+                                ? 'An account already exists for that phone number. Log in instead.'
+                                : error.message || 'Unable to sign in. Please try again.';
+                        setAuthMessage(message, true);
+                    }
                 });
             }
 
-            hydrateAuthState();
+            if (auth) {
+                auth.onAuthStateChanged((user) => {
+                    stopTracking();
+                    if (reportList) reportList.replaceChildren();
+                    if (logoutButton) logoutButton.hidden = !user;
+                    if (user) {
+                        const phone = phoneForAuthUser(user);
+                        setAuthMessage(phone ? `Signed in as ${phone}.` : 'Signed in.');
+                        if (phoneField && phone) phoneField.value = phone;
+                        if (reportPhoneField && phone) reportPhoneField.value = phone;
+                        if (db && reportList && trackerMessage) {
+                            trackerMessage.textContent = 'Loading your reports...';
+                            stopTracking = db.collection('reports')
+                                .where('reporterUid', '==', user.uid)
+                                .onSnapshot((snapshot) => {
+                                    reportList.replaceChildren();
+                                    const reports = snapshot.docs
+                                        .map((document) => document.data())
+                                        .sort((first, second) => Number(second.timestamp || 0) - Number(first.timestamp || 0));
+                                    if (!reports.length) {
+                                        trackerMessage.textContent = 'No reports have been submitted from this account yet.';
+                                        return;
+                                    }
+                                    trackerMessage.textContent = `${reports.length} report${reports.length === 1 ? '' : 's'}`;
+                                    reports.forEach((report) => {
+                                        const entry = document.createElement('article');
+                                        entry.className = 'report-entry';
+                                        const heading = document.createElement('h4');
+                                        heading.textContent = report.department || 'Community report';
+                                        const status = document.createElement('strong');
+                                        status.textContent = report.status || 'Pending';
+                                        const description = document.createElement('p');
+                                        description.textContent = report.description || 'No description provided.';
+                                        entry.append(heading, status, description);
+                                        reportList.append(entry);
+                                    });
+                                }, () => {
+                                    trackerMessage.textContent = 'Unable to load your reports. Please try again later.';
+                                });
+                        }
+                    } else if (trackerMessage) {
+                        trackerMessage.textContent = 'Sign in to see your report updates.';
+                    }
+                });
+            } else {
+                setAuthMessage('Firebase is not configured for this website.', true);
+            }
 
             const locationButton = document.getElementById('use-location');
             const coordinatesField = document.getElementById('coordinates');
@@ -227,75 +311,85 @@
 
             const message = form.querySelector('.form-message');
             const submitButton = form.querySelector('.form-submit');
+            const authorityByCategory = {
+                'Roads and transport': 'CITY COUNCIL',
+                'Water and drainage': 'ZINWA',
+                'Power and lighting': 'ZESA',
+                'Waste and cleanliness': 'CITY COUNCIL',
+                'Safety concern': 'CITY COUNCIL'
+            };
+
+            const setReportMessage = (text, isError = false) => {
+                if (!message) return;
+                message.textContent = text;
+                message.classList.add('is-visible');
+                message.classList.toggle('success', !isError);
+                message.classList.toggle('error', isError);
+            };
 
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
-                if (!form.reportValidity()) {
+                if (!form.reportValidity()) return;
+                if (!auth || !auth.currentUser || !db || !storage) {
+                    setReportMessage('Sign in before sending a report.', true);
+                    return;
+                }
+
+                const formData = new FormData(form);
+                const coordinateText = String(formData.get('coordinates') || '').trim();
+                let latitude = null;
+                let longitude = null;
+                if (coordinateText) {
+                    const coordinates = coordinateText.split(',').map((value) => Number(value.trim()));
+                    if (coordinates.length !== 2 || !coordinates.every(Number.isFinite) || Math.abs(coordinates[0]) > 90 || Math.abs(coordinates[1]) > 180) {
+                        setReportMessage('Enter coordinates as latitude, longitude.', true);
+                        return;
+                    }
+                    [latitude, longitude] = coordinates;
+                }
+
+                const photo = formData.get('photo');
+                if (photo instanceof File && photo.size > 0 && photo.size > 5 * 1024 * 1024) {
+                    setReportMessage('Choose an image smaller than 5 MB.', true);
                     return;
                 }
 
                 const originalLabel = submitButton ? submitButton.innerHTML : 'Send report';
+                let uploadedPhoto = null;
                 if (submitButton) {
                     submitButton.disabled = true;
                     submitButton.innerHTML = 'Sending...';
                 }
 
                 try {
-                    const formData = new FormData(form);
-                    const payload = Object.fromEntries(formData.entries());
-                    const photo = formData.get('photo');
-                    if (photo instanceof File) payload.photo = photo.name ? { name: photo.name, type: photo.type, size: photo.size } : null;
-                    const endpoint = form.dataset.endpoint || '';
-
-                    if (endpoint && endpoint !== 'contact.php') {
-                        try {
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-
-                            if (!response.ok) {
-                                throw new Error('Server rejected the report.');
-                            }
-                        } catch (networkError) {
-                            console.warn('Primary report endpoint failed. Falling back to local save.', networkError);
-                        }
+                    let imageUrl = null;
+                    if (photo instanceof File && photo.size > 0) {
+                        const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                        uploadedPhoto = storage.ref().child(`reports/${auth.currentUser.uid}/${Date.now()}-${safeName}`);
+                        const upload = await uploadedPhoto.put(photo, { contentType: photo.type });
+                        imageUrl = await upload.ref.getDownloadURL();
                     }
 
-                    let savedReports = [];
-                    try {
-                        const saved = localStorage.getItem('reportit-submissions');
-                        savedReports = saved ? JSON.parse(saved) : [];
-                        if (!Array.isArray(savedReports)) savedReports = [];
-                    } catch (storageError) {
-                        console.warn('Local storage is unavailable.', storageError);
-                    }
-
-                    savedReports.push({
-                        ...payload,
-                        createdAt: new Date().toISOString(),
-                        submittedVia: endpoint || 'local-fallback'
-                    });
-
-                    try {
-                        localStorage.setItem('reportit-submissions', JSON.stringify(savedReports));
-                    } catch (storageError) {
-                        console.warn('Unable to save report locally.', storageError);
-                    }
-
-                    if (message) {
-                        message.textContent = 'Thanks! Your report has been saved and your community can now follow it.';
-                        message.classList.add('success');
-                    }
-
+                    const category = String(formData.get('category'));
+                    const report = {
+                        description: `${String(formData.get('details')).trim()}\n\nLocation: ${String(formData.get('location')).trim()}\nIssue type: ${category}`,
+                        department: authorityByCategory[category] || 'General',
+                        reporterPhone: phoneForAuthUser(auth.currentUser),
+                        latitude,
+                        longitude,
+                        imageUrl,
+                        status: 'Pending',
+                        timestamp: Date.now(),
+                        reporterUid: auth.currentUser.uid
+                    };
+                    await db.collection('reports').add(report);
+                    setReportMessage(`Thanks. Your report has been sent to ${report.department}.`);
                     form.reset();
                 } catch (error) {
                     console.error('Report error:', error);
-                    if (message) {
-                        message.textContent = 'Something went wrong while sending your report. Please try again.';
-                    }
+                    if (uploadedPhoto) await uploadedPhoto.delete().catch(() => {});
+                    setReportMessage(error.message || 'Unable to send your report. Please try again.', true);
                 } finally {
                     if (submitButton) {
                         submitButton.disabled = false;

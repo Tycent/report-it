@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                     forceNumber = "Tafadzwa",
                     name = "Tafadzwa",
                     department = "Master",
-                    password = "TYCENT@12",
+                    password = "123456789",
                     phoneNumber = "0777777777"
                 )
                 database.adminDao().insertAdmin(masterAdmin)
@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
                     phoneNumber = "0777777777",
                     name = "Tafadzwa",
                     address = "Harare",
-                    password = "TYCENT@12"
+                    password = "123456789"
                 )
                 database.userDao().insertUser(testUser)
             } catch (e: Exception) {

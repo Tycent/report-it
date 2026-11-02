@@ -21,7 +21,7 @@ fun AdminLoginScreen(
     modifier: Modifier = Modifier
 ) {
     var forceNumber by remember { mutableStateOf("Tafadzwa") }
-    var password by remember { mutableStateOf("TYCENT@12") }
+    var password by remember { mutableStateOf("123456789") }
 
     Column(
         modifier = modifier

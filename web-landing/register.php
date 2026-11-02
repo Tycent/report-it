@@ -1,4 +1,9 @@
 <?php
+http_response_code(410);
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode(['success' => false, 'message' => 'This endpoint has been retired. Use the website registration form.']);
+exit;
+
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

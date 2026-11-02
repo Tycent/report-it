@@ -41,7 +41,7 @@ fun LoginScreen(
     modifier: Modifier = Modifier
 ) {
     var phoneNumber by remember { mutableStateOf("0777777777") }
-    var password by remember { mutableStateOf("TYCENT@12") }
+    var password by remember { mutableStateOf("123456789") }
 
     Column(
         modifier = modifier
