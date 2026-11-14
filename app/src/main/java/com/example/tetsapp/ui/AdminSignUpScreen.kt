@@ -12,6 +12,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminSignUpScreen(
     onSignUpClick: (String, String, String, String, String) -> Unit,
@@ -61,13 +62,40 @@ fun AdminSignUpScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = department,
-            onValueChange = { department = it },
-            label = { Text("Department") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+        var expanded by remember { mutableStateOf(false) }
+        val departments = listOf("ZINWA", "CITY COUNCIL", "ZESA", "Master")
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = department,
+                onValueChange = { department = it },
+                label = { Text("Department") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                readOnly = true,
+                singleLine = true
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                departments.forEach { dept ->
+                    DropdownMenuItem(
+                        text = { Text(dept) },
+                        onClick = {
+                            department = dept
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

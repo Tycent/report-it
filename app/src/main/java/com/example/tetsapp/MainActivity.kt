@@ -57,6 +57,33 @@ class MainActivity : ComponentActivity() {
                     password = "123456789"
                 )
                 database.userDao().insertUser(testUser)
+
+                // Sync default test credentials to cloud if online
+                try {
+                    val adminDoc = db.collection("admins").document("Tafadzwa").get().await()
+                    if (!adminDoc.exists()) {
+                        val adminMap = mapOf(
+                            "name" to "Tafadzwa",
+                            "forceNumber" to "Tafadzwa",
+                            "department" to "Master",
+                            "phoneNumber" to "0777777777",
+                            "password" to "123456789"
+                        )
+                        db.collection("admins").document("Tafadzwa").set(adminMap).await()
+                    }
+                    val userDoc = db.collection("users").document("0777777777").get().await()
+                    if (!userDoc.exists()) {
+                        val userMap = mapOf(
+                            "name" to "Tafadzwa",
+                            "address" to "Harare",
+                            "phoneNumber" to "0777777777",
+                            "password" to "123456789"
+                        )
+                        db.collection("users").document("0777777777").set(userMap).await()
+                    }
+                } catch (_: Exception) {
+                    // Deferred offline seed
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -366,9 +393,15 @@ class MainActivity : ComponentActivity() {
                         "forgot_password" -> ForgotPasswordScreen(
                             onResetClick = { phone, newPassword ->
                                 lifecycleScope.launch {
+                                    val cleanPhone = phone.trim()
                                     try {
-                                        db.collection("users").document(phone).update("password", newPassword).await()
-                                        Toast.makeText(this@MainActivity, "Password updated!", Toast.LENGTH_SHORT).show()
+                                        database.userDao().updatePassword(cleanPhone, newPassword)
+                                        try {
+                                            db.collection("users").document(cleanPhone).update("password", newPassword).await()
+                                        } catch (_: Exception) {
+                                            // Cloud sync deferred if offline
+                                        }
+                                        Toast.makeText(this@MainActivity, "Password updated successfully!", Toast.LENGTH_SHORT).show()
                                         currentScreen = "login"
                                     } catch (e: Exception) {
                                         Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()

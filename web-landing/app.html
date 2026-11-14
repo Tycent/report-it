@@ -125,6 +125,7 @@
             const auth = firebaseReady ? firebase.auth() : null;
             const db = firebaseReady ? firebase.firestore() : null;
             const storage = firebaseReady ? firebase.storage() : null;
+            let localUser = null;
 
             const setAuthMessage = (message, isError = false) => {
                 if (!loginMessage) return;
@@ -149,21 +150,83 @@
 
             const authEmailForPhone = (phone) => `phone-${phone.replace(/\D/g, '')}@report-it-cf60e.firebaseapp.com`;
 
-            const phoneForAuthUser = (user) => {
-                const match = user && user.email && user.email.match(/^phone-(\d+)@report-it-cf60e\.firebaseapp\.com$/);
-                return match ? `+${match[1]}` : '';
+            const phoneForAuthUser = () => localUser ? localUser.phone : '';
+
+            const authRequest = async (action, data = null) => {
+                const response = await fetch(`local-auth.php?action=${encodeURIComponent(action)}`, {
+                    method: action === 'me' ? 'GET' : 'POST',
+                    headers: data ? { 'Content-Type': 'application/json' } : {},
+                    body: data ? JSON.stringify(data) : undefined,
+                    credentials: 'same-origin'
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Local authentication request failed.');
+                }
+                return result;
+            };
+
+            const ensureFirebaseIdentity = async () => {
+                if (!auth) throw new Error('Firebase is not configured for report storage.');
+                if (auth.currentUser && !auth.currentUser.isAnonymous) await auth.signOut();
+                if (!auth.currentUser) await auth.signInAnonymously();
+            };
+
+            const updateSignedInState = async (user) => {
+                stopTracking();
+                if (reportList) reportList.replaceChildren();
+                if (logoutButton) logoutButton.hidden = !localUser;
+                if (user && localUser) {
+                    if (phoneField) phoneField.value = localUser.phone;
+                    if (reportPhoneField) reportPhoneField.value = localUser.phone;
+                    setAuthMessage(`Signed in as ${localUser.phone}.`);
+                    if (db && reportList && trackerMessage) {
+                        trackerMessage.textContent = 'Loading your reports...';
+                        stopTracking = db.collection('reports')
+                            .where('reporterUid', '==', user.uid)
+                            .onSnapshot((snapshot) => {
+                                reportList.replaceChildren();
+                                const reports = snapshot.docs
+                                    .map((document) => document.data())
+                                    .sort((first, second) => Number(second.timestamp || 0) - Number(first.timestamp || 0));
+                                if (!reports.length) {
+                                    trackerMessage.textContent = 'No reports have been submitted from this account yet.';
+                                    return;
+                                }
+                                trackerMessage.textContent = `${reports.length} report${reports.length === 1 ? '' : 's'}`;
+                                reports.forEach((report) => {
+                                    const entry = document.createElement('article');
+                                    entry.className = 'report-entry';
+                                    const heading = document.createElement('h4');
+                                    heading.textContent = report.department || 'Community report';
+                                    const status = document.createElement('strong');
+                                    status.textContent = report.status || 'Pending';
+                                    const description = document.createElement('p');
+                                    description.textContent = report.description || 'No description provided.';
+                                    entry.append(heading, status, description);
+                                    reportList.append(entry);
+                                });
+                            }, () => {
+                                trackerMessage.textContent = 'Unable to load your reports. Please try again later.';
+                            });
+                    }
+                } else {
+                    if (trackerMessage) trackerMessage.textContent = 'Sign in to see your report updates.';
+                }
             };
 
             const handleLogout = async () => {
-                if (!auth) {
-                    setAuthMessage('Firebase is not configured for this website.', true);
-                    return;
-                }
                 try {
-                    await auth.signOut();
+                    await authRequest('logout');
+                    localUser = null;
+                    stopTracking();
+                    if (auth && auth.currentUser) await auth.signOut();
+                    if (logoutButton) logoutButton.hidden = true;
+                    if (reportPhoneField) reportPhoneField.value = '';
+                    if (trackerMessage) trackerMessage.textContent = 'Sign in to see your report updates.';
                     setAuthMessage('You have been signed out.');
                 } catch (error) {
-                    setAuthMessage(error.message || 'Unable to sign out.', true);
+                    setAuthMessage(error.message || 'Unable to sign out locally.', true);
                 }
             };
 
@@ -214,80 +277,50 @@
                         setAuthMessage('Phone number and password are required.', true);
                         return;
                     }
-
-                    if (!auth) {
-                        setAuthMessage('Firebase is not configured for this website.', true);
-                        return;
-                    }
                     try {
-                        const authEmail = authEmailForPhone(phone);
-                        if (registrationMode) {
-                            if (password.length < 6) throw new Error('Password must contain at least 6 characters.');
-                            await auth.createUserWithEmailAndPassword(authEmail, password);
-                            setAuthMessage(`Your account has been created for ${phone} and you are signed in.`);
-                        } else {
-                            await auth.signInWithEmailAndPassword(authEmail, password);
-                            setAuthMessage(`Signed in as ${phone}.`);
+                        const previousPhone = localUser ? localUser.phone : '';
+                        const result = await authRequest(registrationMode ? 'register' : 'login', { phone, password });
+                        if (previousPhone && previousPhone !== result.user.phone && auth && auth.currentUser) {
+                            await auth.signOut();
                         }
-                        if (phoneField) phoneField.value = phone;
-                        if (reportPhoneField) reportPhoneField.value = phone;
+                        localUser = result.user;
+                        await ensureFirebaseIdentity();
+                        await updateSignedInState(auth.currentUser);
                     } catch (error) {
-                        const message = error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential'
-                            ? 'No account found for that phone number, or the password is incorrect.'
-                            : error.code === 'auth/email-already-in-use'
-                                ? 'An account already exists for that phone number. Log in instead.'
-                                : error.message || 'Unable to sign in. Please try again.';
-                        setAuthMessage(message, true);
+                        if (logoutButton && localUser) logoutButton.hidden = false;
+                        setAuthMessage(error.message || 'Unable to sign in. Please try again.', true);
                     }
                 });
             }
 
             if (auth) {
                 auth.onAuthStateChanged((user) => {
-                    stopTracking();
-                    if (reportList) reportList.replaceChildren();
-                    if (logoutButton) logoutButton.hidden = !user;
-                    if (user) {
-                        const phone = phoneForAuthUser(user);
-                        setAuthMessage(phone ? `Signed in as ${phone}.` : 'Signed in.');
-                        if (phoneField && phone) phoneField.value = phone;
-                        if (reportPhoneField && phone) reportPhoneField.value = phone;
-                        if (db && reportList && trackerMessage) {
-                            trackerMessage.textContent = 'Loading your reports...';
-                            stopTracking = db.collection('reports')
-                                .where('reporterUid', '==', user.uid)
-                                .onSnapshot((snapshot) => {
-                                    reportList.replaceChildren();
-                                    const reports = snapshot.docs
-                                        .map((document) => document.data())
-                                        .sort((first, second) => Number(second.timestamp || 0) - Number(first.timestamp || 0));
-                                    if (!reports.length) {
-                                        trackerMessage.textContent = 'No reports have been submitted from this account yet.';
-                                        return;
-                                    }
-                                    trackerMessage.textContent = `${reports.length} report${reports.length === 1 ? '' : 's'}`;
-                                    reports.forEach((report) => {
-                                        const entry = document.createElement('article');
-                                        entry.className = 'report-entry';
-                                        const heading = document.createElement('h4');
-                                        heading.textContent = report.department || 'Community report';
-                                        const status = document.createElement('strong');
-                                        status.textContent = report.status || 'Pending';
-                                        const description = document.createElement('p');
-                                        description.textContent = report.description || 'No description provided.';
-                                        entry.append(heading, status, description);
-                                        reportList.append(entry);
-                                    });
-                                }, () => {
-                                    trackerMessage.textContent = 'Unable to load your reports. Please try again later.';
-                                });
-                        }
-                    } else if (trackerMessage) {
-                        trackerMessage.textContent = 'Sign in to see your report updates.';
-                    }
+                    updateSignedInState(user);
                 });
             } else {
-                setAuthMessage('Firebase is not configured for this website.', true);
+                setAuthMessage('Local sign-in is available. Firebase is only needed to submit and track reports.');
+            }
+
+            authRequest('me').then(async (result) => {
+                localUser = result.user;
+                if (localUser) {
+                    try {
+                        await ensureFirebaseIdentity();
+                        updateSignedInState(auth ? auth.currentUser : null);
+                    } catch (error) {
+                        if (logoutButton) logoutButton.hidden = false;
+                        if (reportPhoneField) reportPhoneField.value = localUser.phone;
+                        setAuthMessage(`Signed in locally as ${localUser.phone}. ${error.message}`, true);
+                        if (trackerMessage) trackerMessage.textContent = 'Firebase is unavailable; report tracking is disabled.';
+                    }
+                } else {
+                    if (auth && auth.currentUser) await auth.signOut();
+                    if (logoutButton) logoutButton.hidden = true;
+                }
+            }).catch((error) => {
+                setAuthMessage(`Cannot reach the local authentication server. Start it with start-local.bat. ${error.message}`, true);
+                if (loginSubmit) loginSubmit.disabled = true;
+                if (trackerMessage) trackerMessage.textContent = 'Start the local server to sign in.';
             }
 
             const locationButton = document.getElementById('use-location');
@@ -331,8 +364,12 @@
                 event.preventDefault();
 
                 if (!form.reportValidity()) return;
+                if (!localUser) {
+                    setReportMessage('Sign in with your local account before sending a report.', true);
+                    return;
+                }
                 if (!auth || !auth.currentUser || !db || !storage) {
-                    setReportMessage('Sign in before sending a report.', true);
+                    setReportMessage('Firebase is unavailable. Your account is still local, but reports cannot be submitted right now.', true);
                     return;
                 }
 
@@ -375,7 +412,7 @@
                     const report = {
                         description: `${String(formData.get('details')).trim()}\n\nLocation: ${String(formData.get('location')).trim()}\nIssue type: ${category}`,
                         department: authorityByCategory[category] || 'General',
-                        reporterPhone: phoneForAuthUser(auth.currentUser),
+                        reporterPhone: phoneForAuthUser(),
                         latitude,
                         longitude,
                         imageUrl,

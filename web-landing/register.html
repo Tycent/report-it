@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="0;url=app.html#register">
     <meta name="description" content="Create a Report It account.">
     <title>Create account | Report It</title>
     <link rel="stylesheet" href="style.css">
@@ -15,7 +14,7 @@
             <div class="login-page-content register-content">
                 <p class="eyebrow">Join your community</p>
                 <h1 id="register-title">Create an account.</h1>
-                <p class="login-copy">Use these details in both the website and the Report It mobile application.</p>
+                <p class="login-copy">This account is saved on this computer and is used to sign in to this website.</p>
                 <form class="login-page-form" id="register-form" data-endpoint="register.php">
                     <div class="field"><label for="register-name">Full name</label><input id="register-name" name="name" type="text" autocomplete="name" required></div>
                     <div class="field"><label for="register-address">Residential address</label><input id="register-address" name="address" type="text" autocomplete="street-address" required></div>
@@ -35,10 +34,6 @@
             <div class="status-card"><small>Account status</small><strong>Connected</strong><div class="progress" aria-label="Account connected"><span></span></div></div>
         </aside>
     </main>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
