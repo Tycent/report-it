@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,30 +26,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.tetsapp.R
-import com.example.tetsapp.ui.theme.TetsAppTheme
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportFormScreen(
     authority: String,
-    onSubmit: (String, Uri?, Double?, Double?) -> Unit,
+    onSubmit: (String, Uri?) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var description by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    
-    // Location states
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
-    var locationStatus by remember { mutableStateOf("Fetching location...") }
-
     val context = LocalContext.current
-    val fusedLocationClient: FusedLocationProviderClient = remember {
-        LocationServices.getFusedLocationProviderClient(context)
-    }
 
     // Image Pickers
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -87,30 +75,6 @@ fun ReportFormScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        try {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location: android.location.Location? ->
-                    if (location != null) {
-                        latitude = location.latitude
-                        longitude = location.longitude
-                        locationStatus = "Location captured"
-                    } else {
-                        locationStatus = "Location not available"
-                    }
-                }
-            } else {
-                locationStatus = "Location permission required"
-            }
-        } catch (e: Exception) {
-            locationStatus = "Error fetching location"
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         // Backgrounds
         val bgRes = when (authority) {
@@ -133,16 +97,7 @@ fun ReportFormScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = {
-                        Column {
-                            Text("Report to $authority")
-                            Text(
-                                text = locationStatus,
-                                fontSize = 10.sp,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        }
-                    },
+                    title = { Text("Report to $authority") },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -249,7 +204,7 @@ fun ReportFormScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = { onSubmit(description, selectedImageUri, latitude, longitude) },
+                    onClick = { onSubmit(description, selectedImageUri) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = description.isNotBlank()
                 ) {

@@ -321,7 +321,7 @@
                 setAuthMessage(`Cannot reach the local authentication server. Start it with start-local.bat. ${error.message}`, true);
                 if (loginSubmit) loginSubmit.disabled = true;
                 if (trackerMessage) trackerMessage.textContent = 'Start the local server to sign in.';
-            }
+            });
 
             const locationButton = document.getElementById('use-location');
             const coordinatesField = document.getElementById('coordinates');

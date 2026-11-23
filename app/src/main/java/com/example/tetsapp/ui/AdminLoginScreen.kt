@@ -17,6 +17,7 @@ import com.example.tetsapp.R
 @Composable
 fun AdminLoginScreen(
     onLoginClick: (String, String) -> Unit,
+    onRegisterAdminClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -76,6 +77,15 @@ fun AdminLoginScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Admin Log In")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = onRegisterAdminClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Register New Admin")
         }
 
         Spacer(modifier = Modifier.height(8.dp))

@@ -256,6 +256,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             },
+                            onRegisterAdminClick = { currentScreen = "admin_signup" },
                             onBackClick = { currentScreen = "login" },
                             modifier = Modifier.padding(innerPadding)
                         )
@@ -361,7 +362,7 @@ class MainActivity : ComponentActivity() {
                         )
                         "report" -> ReportFormScreen(
                             authority = selectedAuthority,
-                            onSubmit = { description, imageUri, lat, lon ->
+                            onSubmit = { description, imageUri ->
                                 lifecycleScope.launch {
                                     try {
                                         var finalImageUrl: String? = null
@@ -375,12 +376,22 @@ class MainActivity : ComponentActivity() {
                                             description = description,
                                             department = selectedAuthority,
                                             reporterPhone = loggedInUserPhone,
-                                            latitude = lat,
-                                            longitude = lon,
-                                            imageUrl = finalImageUrl
+                                            latitude = null,
+                                            longitude = null,
+                                            imageUrl = finalImageUrl,
+                                            status = "Pending",
+                                            timestamp = System.currentTimeMillis()
                                         )
-                                        db.collection("reports").add(report).await()
-                                        Toast.makeText(this@MainActivity, "Report sent successfully!", Toast.LENGTH_SHORT).show()
+
+                                        database.reportDao().insertReport(report)
+
+                                        try {
+                                            db.collection("reports").add(report).await()
+                                        } catch (_: Exception) {
+                                            // Deferred cloud sync
+                                        }
+
+                                        Toast.makeText(this@MainActivity, "Report submitted successfully!", Toast.LENGTH_SHORT).show()
                                         currentScreen = "home"
                                     } catch (e: Exception) {
                                         Toast.makeText(this@MainActivity, "Submission failed: ${e.message}", Toast.LENGTH_SHORT).show()

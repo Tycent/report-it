@@ -6,9 +6,15 @@ import androidx.room.Query
 
 @Dao
 interface ReportDao {
+    @Query("SELECT * FROM reports ORDER BY timestamp DESC")
+    suspend fun getAllReports(): List<Report>
+
     @Query("SELECT * FROM reports WHERE department = :department ORDER BY timestamp DESC")
     suspend fun getReportsByDepartment(department: String): List<Report>
 
     @Insert
     suspend fun insertReport(report: Report)
+
+    @Query("UPDATE reports SET status = :status WHERE timestamp = :timestamp")
+    suspend fun updateReportStatus(timestamp: Long, status: String)
 }
